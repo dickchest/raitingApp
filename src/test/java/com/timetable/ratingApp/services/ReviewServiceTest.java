@@ -146,7 +146,7 @@ public class ReviewServiceTest {
         when(collectionMock.document(anyString()).delete()).thenReturn(writeResultFutureMock);
 
         // Act
-        String result = reviewService.delete("reviewId123");
+        String result = reviewService.delete("reviewId123", principalMock);
 
         // Assert
         assertEquals("Successfully deleted reviewId123", result);

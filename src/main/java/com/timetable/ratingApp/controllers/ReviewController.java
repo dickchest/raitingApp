@@ -38,8 +38,8 @@ public class ReviewController {
     }
 
     @DeleteMapping("/delete")
-    public ResponseEntity<String> delete(@RequestParam String documentId) throws ExecutionException, InterruptedException {
-        return new ResponseEntity<>(service.delete(documentId), HttpStatus.NO_CONTENT);
+    public ResponseEntity<String> delete(@RequestParam String documentId, Principal principal) throws ExecutionException, InterruptedException {
+        return new ResponseEntity<>(service.delete(documentId, principal), HttpStatus.NO_CONTENT);
     }
 
 

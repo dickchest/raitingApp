@@ -6,6 +6,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.springframework.beans.factory.annotation.Value;
 
 @Getter
 @AllArgsConstructor
@@ -13,11 +14,14 @@ import lombok.Setter;
 public class Reviews {
     @Setter
     private String id; // Уникальный идентификатор отзыва.
+
     @Setter
     private String fromUserId; // ID пользователя, который оставил отзыв.
+
     private String toUserId; // ID пользователя, которому оставлен отзыв.
-    @Setter
-    private Integer rating; // Рейтинг.
+
+    private Integer rating; // Рейтинг. May by only between 1 and 5
+
     @Setter
     private String comment; // Комментарий
 
@@ -29,5 +33,12 @@ public class Reviews {
         } catch (FirebaseAuthException e) {
             throw new RuntimeException("ToUser not found");
         }
+    }
+
+    public void setRating(Integer rating) {
+        if (rating < 1 || rating > 5) {
+            throw new IllegalArgumentException("Rating must be between 1 and 5.");
+        }
+        this.rating = rating;
     }
 }

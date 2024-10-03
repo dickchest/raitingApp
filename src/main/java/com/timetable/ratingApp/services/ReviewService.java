@@ -3,7 +3,6 @@ package com.timetable.ratingApp.services;
 import com.google.api.core.ApiFuture;
 import com.google.cloud.firestore.*;
 import com.google.firebase.cloud.FirestoreClient;
-import com.timetable.ratingApp.domain.OperationEnum;
 import com.timetable.ratingApp.domain.entities.Reviews;
 import org.springframework.stereotype.Service;
 
@@ -39,7 +38,7 @@ public class ReviewService {
         ApiFuture<WriteResult> writeResult = addedDocRef.set(entity);
 
         // добавпть пересчет среднего рейтинга
-        avgRatingService.addAvgRating(entity.getToUserId(), entity.getRating(), entity, OperationEnum.ADD);
+        avgRatingService.updateAvgRating(entity.getToUserId(), entity.getRating(), 0);
 
         return addedDocRef.getId();
     }
@@ -53,10 +52,13 @@ public class ReviewService {
         // проверка, есть ли документ
         Reviews request = get(entity.getId());
 
-        // проверка, что редактируется свой отзыв
+        // check if it's user's own review
         if (!request.getFromUserId().equals(firebaseAuthService.getUserUid(principal))) {
             throw new RuntimeException("Not allowed!");
         }
+
+        // updating average rating
+        avgRatingService.updateAvgRating(entity.getToUserId(), entity.getRating(), request.getRating());
 
         // проверяем каждое поле
         Optional.ofNullable(entity.getToUserId()).ifPresent(request::setToUserId);
@@ -67,10 +69,21 @@ public class ReviewService {
         return collectionsApiFuture.get().getUpdateTime().toString();
     }
 
-    public String delete(String documentId) {
-        // нужно проверить, есть ли документ
-        DocumentSnapshot document = checkIfExistDocument(documentId);
+    public String delete(String documentId, Principal principal) throws ExecutionException, InterruptedException {
+        // проверка, есть ли документ
+        Reviews request = get(documentId);
+
+        // check if it's user's own review
+        if (!request.getFromUserId().equals(firebaseAuthService.getUserUid(principal)) &&
+                !firebaseAuthService.isAdmin(principal)) {
+            throw new RuntimeException("Not allowed!");
+        }
+
+        // updating average rating
+        avgRatingService.updateAvgRating(documentId, 0, request.getRating());
+
         ApiFuture<WriteResult> collectionsApiFuture = collection.document(documentId).delete();
+
         return "Successfully deleted " + documentId;
     }
 

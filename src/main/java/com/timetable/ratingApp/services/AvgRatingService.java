@@ -3,9 +3,7 @@ package com.timetable.ratingApp.services;
 import com.google.api.core.ApiFuture;
 import com.google.cloud.firestore.*;
 import com.google.firebase.cloud.FirestoreClient;
-import com.timetable.ratingApp.domain.OperationEnum;
 import com.timetable.ratingApp.domain.entities.AvgRatings;
-import com.timetable.ratingApp.domain.entities.Reviews;
 import com.timetable.ratingApp.validation.NotFoundException;
 import org.springframework.stereotype.Service;
 
@@ -46,11 +44,7 @@ public class AvgRatingService {
         return collectionsApiFuture.get().getUpdateTime().toString();
     }
 
-    public void addAvgRating(
-            String toUserId,
-            int newRating,
-            Reviews reviews,
-            OperationEnum operation) throws ExecutionException, InterruptedException {
+    public void updateAvgRating(String toUserId, int newRating, int oldRating) throws ExecutionException, InterruptedException {
 
         // check if document exist
         try {
@@ -62,48 +56,23 @@ public class AvgRatingService {
         // Get AvgRating by user Id
         AvgRatings entity = get(toUserId);
 
-        // proceed operation (Add)
-        switch (operation) {
-            case ADD -> {
-                addRating(newRating, entity);
-                save(entity);
-            }
-            case DELETE -> {
-                // in newRating should be old rating
-                deleteRating(newRating, entity);
-                delete(toUserId);
-            }
-            case UPDATE -> {
-                updateRating(newRating, entity, reviews);
-                save(entity);
-            }
+        // rating counter in average formula
+        int ratingCount = entity.getTotalReviews();
+
+        if (newRating - oldRating == newRating) { // adding
+            ratingCount++;
+        } else if (newRating - oldRating == -oldRating) { // deleting
+            ratingCount--;
         }
-        addRating(newRating, entity);
+        // else counter remain the same, but not divide by 0
+        double result = (ratingCount == 0)
+                ? 0
+                : (entity.getAvgRating() * entity.getTotalReviews() - oldRating + newRating) / ratingCount;
+
+        entity.setAvgRating(result); // set new average rating
 
         // safe updated record
         save(entity);
-    }
-
-    private void updateRating(int newRating, AvgRatings entity, Reviews reviews) {
-        double oldRating = reviews.getRating();
-        double newAvgRating = (entity.getAvgRating() * entity.getTotalReviews() - oldRating) / (entity.getTotalReviews() - 1);
-        newAvgRating = (entity.getAvgRating() * entity.getTotalReviews() - oldRating) / (entity.getTotalReviews() - 1);
-        entity.setAvgRating(newAvgRating);
-        entity.setTotalReviews(entity.getTotalReviews() - 1);
-    }
-
-    private void deleteRating(int oldRating, AvgRatings entity) {
-        // Update average rating
-        double newAvgRating = (entity.getAvgRating() * entity.getTotalReviews() - oldRating) / (entity.getTotalReviews() - 1);
-        entity.setAvgRating(newAvgRating);
-        entity.setTotalReviews(entity.getTotalReviews() - 1);
-    }
-
-    private static void addRating(int newRating, AvgRatings entity) {
-        // Update average rating
-        double newAvgRating = (entity.getAvgRating() * entity.getTotalReviews() + newRating) / (entity.getTotalReviews() + 1);
-        entity.setAvgRating(newAvgRating);
-        entity.setTotalReviews(entity.getTotalReviews() + 1);
     }
 
 

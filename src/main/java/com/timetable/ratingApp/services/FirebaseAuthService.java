@@ -98,7 +98,7 @@ public class FirebaseAuthService {
         return "Custom claims set for user with UID: " + uid;
     }
 
-    public boolean isAdmin(Principal principal) throws FirebaseAuthException {
+    public boolean isAdmin(Principal principal) {
         // get current auth from security context
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
@@ -107,12 +107,19 @@ public class FirebaseAuthService {
 
             // Get token and check it with Firebase
             String idToken = jwt.getTokenValue();
-            FirebaseToken decodedToken = FirebaseAuth.getInstance().verifyIdToken(idToken);
+            FirebaseToken decodedToken = null;
+            try {
 
-            // check if admin word exist
-            Boolean isAdmin = (Boolean) decodedToken.getClaims().get("admin");
+                decodedToken = FirebaseAuth.getInstance().verifyIdToken(idToken);
+                // check if admin word exist
+                Boolean isAdmin = (Boolean) decodedToken.getClaims().get("admin");
 
-            return isAdmin != null && isAdmin;
+                return isAdmin != null && isAdmin;
+
+            } catch (FirebaseAuthException e) {
+                throw new RuntimeException(e);
+            }
+
         }
         return false;
     }

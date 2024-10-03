@@ -130,7 +130,7 @@ class ReviewControllerTest {
     void delete() throws Exception {
         String expectedResponse = "Successfully deleted";
 
-        when(service.delete(anyString())).thenReturn(expectedResponse);
+        when(service.delete(anyString(), any(Principal.class))).thenReturn(expectedResponse);
 
         mockMvc.perform(MockMvcRequestBuilders.delete(basePath + "delete")
                         .with(csrf())
@@ -139,6 +139,6 @@ class ReviewControllerTest {
                 .andExpect(status().isNoContent())
                 .andExpect(content().string(expectedResponse));
 
-        verify(service).delete(anyString());
+        verify(service).delete(anyString(), any(Principal.class));
     }
 }
