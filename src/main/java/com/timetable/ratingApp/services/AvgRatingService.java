@@ -23,11 +23,15 @@ public class AvgRatingService {
         return documents.stream().map(x -> x.toObject(AvgRatings.class)).toList();
     }
 
-    private String create(String toUserId) {
-        DocumentReference addedDocRef = collection.document();
+    private String create(String toUserId) throws ExecutionException, InterruptedException {
+        // create record and ajust toUserId as uid
+        DocumentReference addedDocRef = collection.document(toUserId);
         AvgRatings entity = new AvgRatings(toUserId, 0.0, 0);
 
         ApiFuture<WriteResult> writeResult = addedDocRef.set(entity);
+
+        // wait for record to be created
+        writeResult.get();
 
         return addedDocRef.getId();
     }
@@ -47,14 +51,14 @@ public class AvgRatingService {
     public void updateAvgRating(String toUserId, int newRating, int oldRating) throws ExecutionException, InterruptedException {
 
         // check if document exist
+        AvgRatings entity;
         try {
-            checkIfExistDocument(toUserId);
+            entity = get(toUserId);
         } catch (NotFoundException e) {
             // if entity doesn't exist, create one
             create(toUserId);
+            entity = new AvgRatings(toUserId, 0.0, 0);
         }
-        // Get AvgRating by user Id
-        AvgRatings entity = get(toUserId);
 
         // rating counter in average formula
         int ratingCount = entity.getTotalReviews();
@@ -70,17 +74,16 @@ public class AvgRatingService {
                 : (entity.getAvgRating() * entity.getTotalReviews() - oldRating + newRating) / ratingCount;
 
         entity.setAvgRating(result); // set new average rating
+        entity.setTotalReviews(ratingCount);
 
         // safe updated record
         save(entity);
     }
 
-
     public AvgRatings get(String documentId) {
         DocumentSnapshot document = checkIfExistDocument(documentId);
         return document.toObject(AvgRatings.class);
     }
-
 
     public String delete(String documentId) {
         // нужно проверить, есть ли документ
@@ -97,7 +100,7 @@ public class AvgRatingService {
             if (document.exists()) {
                 return document;
             } else {
-                throw new NotFoundException("Entity Not Found");
+                throw new NotFoundException("Entity in AvgRatings Not Found");
             }
         } catch (InterruptedException | ExecutionException e) {
             throw new RuntimeException(e);

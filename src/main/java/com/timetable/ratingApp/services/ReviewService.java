@@ -37,7 +37,7 @@ public class ReviewService {
         entity.setFromUserId(firebaseAuthService.getUserUid(principal));
         ApiFuture<WriteResult> writeResult = addedDocRef.set(entity);
 
-        // добавпть пересчет среднего рейтинга
+        // updating average rating
         avgRatingService.updateAvgRating(entity.getToUserId(), entity.getRating(), 0);
 
         return addedDocRef.getId();
@@ -51,6 +51,7 @@ public class ReviewService {
     public String update(Reviews entity, Principal principal) throws ExecutionException, InterruptedException {
         // проверка, есть ли документ
         Reviews request = get(entity.getId());
+        System.out.println(entity.getToUserId());
 
         // check if it's user's own review
         if (!request.getFromUserId().equals(firebaseAuthService.getUserUid(principal))) {
@@ -58,10 +59,10 @@ public class ReviewService {
         }
 
         // updating average rating
-        avgRatingService.updateAvgRating(entity.getToUserId(), entity.getRating(), request.getRating());
+        System.out.println("entity = " + entity.getToUserId() + ", new rating = " + entity.getRating() + ", old rating = " + request.getRating());
+        avgRatingService.updateAvgRating(request.getToUserId(), entity.getRating(), request.getRating());
 
         // проверяем каждое поле
-        Optional.ofNullable(entity.getToUserId()).ifPresent(request::setToUserId);
         Optional.ofNullable(entity.getRating()).ifPresent(request::setRating);
         Optional.ofNullable(entity.getComment()).ifPresent(request::setComment);
 
@@ -80,7 +81,7 @@ public class ReviewService {
         }
 
         // updating average rating
-        avgRatingService.updateAvgRating(documentId, 0, request.getRating());
+        avgRatingService.updateAvgRating(request.getToUserId(), 0, request.getRating());
 
         ApiFuture<WriteResult> collectionsApiFuture = collection.document(documentId).delete();
 

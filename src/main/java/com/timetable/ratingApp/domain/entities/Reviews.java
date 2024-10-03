@@ -41,4 +41,15 @@ public class Reviews {
         }
         this.rating = rating;
     }
+
+    @Override
+    public String toString() {
+        return "Reviews{" +
+                "id='" + id + '\'' +
+                ", fromUserId='" + fromUserId + '\'' +
+                ", toUserId='" + toUserId + '\'' +
+                ", rating=" + rating +
+                ", comment='" + comment + '\'' +
+                '}';
+    }
 }

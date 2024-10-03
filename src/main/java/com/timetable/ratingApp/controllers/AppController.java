@@ -49,13 +49,13 @@ public class AppController {
     }
 
     @GetMapping("/setAdminTrue")
-    public String setAdminTrue(@RequestParam String uid, Principal principal) throws Exception {
-        return authService.setAdminRole(uid, principal, true);
+    public String setAdminTrue(@RequestParam String documentId, Principal principal) throws Exception {
+        return authService.setAdminRole(documentId, principal, true);
     }
 
     @GetMapping("/setAdminFalse")
-    public String setAdminFalse(@RequestParam String uid, Principal principal) throws Exception {
-        return authService.setAdminRole(uid, principal, false);
+    public String setAdminFalse(@RequestParam String documentId, Principal principal) throws Exception {
+        return authService.setAdminRole(documentId, principal, false);
     }
 
     @GetMapping("/isAdmin")
