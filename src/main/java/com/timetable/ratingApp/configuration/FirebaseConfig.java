@@ -28,7 +28,7 @@ public class FirebaseConfig {
     public void initializeFirebaseApp() throws IOException {
         FirebaseOptions options = FirebaseOptions.builder()
                 .setCredentials(GoogleCredentials.fromStream(resourceFile.getInputStream()))
-                .setServiceAccountId("firebase-adminsdk-qtm0u@time-tracking-app-790ea.iam.gserviceaccount.com")
+                .setServiceAccountId("firebase-adminsdk-52drz@review-service-df922.iam.gserviceaccount.com")
                 .build();
         FirebaseApp.initializeApp(options);
     }

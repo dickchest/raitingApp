@@ -47,4 +47,19 @@ public class AppController {
     public ResponseEntity<UserInfo[]> getUser(@RequestParam String documentId) {
         return new ResponseEntity<>(authService.getUser(documentId), HttpStatus.OK);
     }
+
+    @GetMapping("/setAdminTrue")
+    public String setAdminTrue(@RequestParam String uid, Principal principal) throws Exception {
+        return authService.setAdminRole(uid, principal, true);
+    }
+
+    @GetMapping("/setAdminFalse")
+    public String setAdminFalse(@RequestParam String uid, Principal principal) throws Exception {
+        return authService.setAdminRole(uid, principal, false);
+    }
+
+    @GetMapping("/isAdmin")
+    public Boolean isAdmin(Principal principal) throws Exception {
+        return authService.isAdmin(principal);
+    }
 }

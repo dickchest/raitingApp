@@ -1,19 +1,15 @@
 package com.timetable.ratingApp.services;
 
-import com.google.api.core.ApiFuture;
-import com.google.cloud.firestore.DocumentReference;
-import com.google.cloud.firestore.DocumentSnapshot;
 import com.google.firebase.auth.*;
-import com.timetable.ratingApp.domain.entities.Reviews;
 import com.timetable.ratingApp.domain.entities.UserDetails;
-import org.apache.catalina.User;
+import com.timetable.ratingApp.validation.NotFoundException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
 
 import java.security.Principal;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.concurrent.ExecutionException;
+import java.util.*;
 
 @Service
 public class FirebaseAuthService {
@@ -83,5 +79,41 @@ public class FirebaseAuthService {
         } catch (FirebaseAuthException e) {
             throw new RuntimeException("User not found");
         }
+    }
+
+    // admin
+    public String setAdminRole(String uid, Principal principal, Boolean adminFlag) throws FirebaseAuthException {
+        if (!isAdmin(principal)) return "User without admin rights can't change user's roles";
+        // Set Custom Claims
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("admin", adminFlag);
+
+        // Set Custom claims for user
+        try {
+            FirebaseAuth.getInstance().setCustomUserClaims(uid, claims);
+        } catch (FirebaseAuthException e) {
+            throw new NotFoundException("User with UID " + uid + " not found!");
+        }
+
+        return "Custom claims set for user with UID: " + uid;
+    }
+
+    public boolean isAdmin(Principal principal) throws FirebaseAuthException {
+        // get current auth from security context
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        // check if Principal has object Jwt
+        if (authentication.getPrincipal() instanceof Jwt jwt) {
+
+            // Get token and check it with Firebase
+            String idToken = jwt.getTokenValue();
+            FirebaseToken decodedToken = FirebaseAuth.getInstance().verifyIdToken(idToken);
+
+            // check if admin word exist
+            Boolean isAdmin = (Boolean) decodedToken.getClaims().get("admin");
+
+            return isAdmin != null && isAdmin;
+        }
+        return false;
     }
 }
