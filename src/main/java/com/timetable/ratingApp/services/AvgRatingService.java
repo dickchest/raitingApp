@@ -23,7 +23,7 @@ public class AvgRatingService {
         return documents.stream().map(x -> x.toObject(AvgRatings.class)).toList();
     }
 
-    private String create(String toUserId) throws ExecutionException, InterruptedException {
+    private void create(String toUserId) throws ExecutionException, InterruptedException {
         // create record and ajust toUserId as uid
         DocumentReference addedDocRef = collection.document(toUserId);
         AvgRatings entity = new AvgRatings(toUserId, 0.0, 0);
@@ -33,10 +33,10 @@ public class AvgRatingService {
         // wait for record to be created
         writeResult.get();
 
-        return addedDocRef.getId();
+        addedDocRef.getId();
     }
 
-    private String save(AvgRatings entity) throws ExecutionException, InterruptedException {
+    private void save(AvgRatings entity) throws ExecutionException, InterruptedException {
         // check if documents exits
         AvgRatings request = get(entity.getToUserId());
 
@@ -45,7 +45,7 @@ public class AvgRatingService {
         Optional.of(entity.getTotalReviews()).ifPresent(request::setTotalReviews);
 
         ApiFuture<WriteResult> collectionsApiFuture = collection.document(entity.getToUserId()).set(request);
-        return collectionsApiFuture.get().getUpdateTime().toString();
+        collectionsApiFuture.get();
     }
 
     public void updateAvgRating(String toUserId, int newRating, int oldRating) throws ExecutionException, InterruptedException {
@@ -87,8 +87,8 @@ public class AvgRatingService {
 
     public String delete(String documentId) {
         // нужно проверить, есть ли документ
-        DocumentSnapshot document = checkIfExistDocument(documentId);
-        ApiFuture<WriteResult> collectionsApiFuture = collection.document(documentId).delete();
+        checkIfExistDocument(documentId);
+        collection.document(documentId).delete();
         return "Successfully deleted " + documentId;
     }
 

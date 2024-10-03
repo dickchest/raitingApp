@@ -16,7 +16,7 @@ public class FirebaseAuthService {
 
     public String getUserUid(Principal principal) {
         try {
-            UserRecord userRecord = FirebaseAuth.getInstance().getUser(principal.getName());
+            FirebaseAuth.getInstance().getUser(principal.getName());
         } catch (FirebaseAuthException e) {
             throw new RuntimeException(e);
         }
@@ -24,7 +24,7 @@ public class FirebaseAuthService {
     }
 
     public String getUserEmail(Principal principal) {
-        UserRecord userRecord = null;
+        UserRecord userRecord;
         try {
             userRecord = FirebaseAuth.getInstance().getUser(principal.getName());
         } catch (FirebaseAuthException e) {
@@ -82,8 +82,8 @@ public class FirebaseAuthService {
     }
 
     // admin
-    public String setAdminRole(String uid, Principal principal, Boolean adminFlag) throws FirebaseAuthException {
-        if (!isAdmin(principal)) return "User without admin rights can't change user's roles";
+    public String setAdminRole(String uid, Principal principal, Boolean adminFlag) {
+        if (!isAdmin()) return "User without admin rights can't change user's roles";
         // Set Custom Claims
         Map<String, Object> claims = new HashMap<>();
         claims.put("admin", adminFlag);
@@ -98,7 +98,7 @@ public class FirebaseAuthService {
         return "Custom claims set for user with UID: " + uid;
     }
 
-    public boolean isAdmin(Principal principal) {
+    public boolean isAdmin() {
         // get current auth from security context
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
@@ -107,7 +107,7 @@ public class FirebaseAuthService {
 
             // Get token and check it with Firebase
             String idToken = jwt.getTokenValue();
-            FirebaseToken decodedToken = null;
+            FirebaseToken decodedToken;
             try {
 
                 decodedToken = FirebaseAuth.getInstance().verifyIdToken(idToken);

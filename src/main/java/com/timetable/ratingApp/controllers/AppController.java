@@ -60,6 +60,6 @@ public class AppController {
 
     @GetMapping("/isAdmin")
     public Boolean isAdmin(Principal principal) throws Exception {
-        return authService.isAdmin(principal);
+        return authService.isAdmin();
     }
 }

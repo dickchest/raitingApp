@@ -35,7 +35,7 @@ public class ReviewService {
 
         entity.setId(addedDocRef.getId());
         entity.setFromUserId(firebaseAuthService.getUserUid(principal));
-        ApiFuture<WriteResult> writeResult = addedDocRef.set(entity);
+        addedDocRef.set(entity);
 
         // updating average rating
         avgRatingService.updateAvgRating(entity.getToUserId(), entity.getRating(), 0);
@@ -76,14 +76,14 @@ public class ReviewService {
 
         // check if it's user's own review
         if (!request.getFromUserId().equals(firebaseAuthService.getUserUid(principal)) &&
-                !firebaseAuthService.isAdmin(principal)) {
+                !firebaseAuthService.isAdmin()) {
             throw new RuntimeException("Not allowed!");
         }
 
         // updating average rating
         avgRatingService.updateAvgRating(request.getToUserId(), 0, request.getRating());
 
-        ApiFuture<WriteResult> collectionsApiFuture = collection.document(documentId).delete();
+        collection.document(documentId).delete();
 
         return "Successfully deleted " + documentId;
     }
