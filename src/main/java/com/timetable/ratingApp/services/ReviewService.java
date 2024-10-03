@@ -49,7 +49,7 @@ public class ReviewService {
     }
 
     public String update(Reviews entity, Principal principal) throws ExecutionException, InterruptedException {
-        // проверка, есть ли документ
+        // check if account exists
         Reviews request = get(entity.getId());
         System.out.println(entity.getToUserId());
 
@@ -71,7 +71,7 @@ public class ReviewService {
     }
 
     public String delete(String documentId, Principal principal) throws ExecutionException, InterruptedException {
-        // проверка, есть ли документ
+        // check if document exists
         Reviews request = get(documentId);
 
         // check if it's user's own review
