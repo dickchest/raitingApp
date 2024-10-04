@@ -17,8 +17,6 @@ public class AdminCheckAspect {
 
     @Before("@annotation(com.timetable.ratingApp.domain.annotation.IsAdmin)")
     public void checkIfAdmin() {
-        System.out.println("Зашли в аспект isAdmin");
-        System.out.println(firebaseAuthService.isAdmin());
         if (!firebaseAuthService.isAdmin()) {
             throw new RuntimeException("User in not admin");
         }

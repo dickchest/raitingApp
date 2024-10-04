@@ -4,7 +4,9 @@ import com.google.api.core.ApiFuture;
 import com.google.cloud.firestore.*;
 import com.google.firebase.cloud.FirestoreClient;
 import com.timetable.ratingApp.domain.entities.AvgRatings;
+import com.timetable.ratingApp.repository.AvgRatingRepositoryImpl;
 import com.timetable.ratingApp.validation.NotFoundException;
+import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -12,28 +14,20 @@ import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 
 @Service
+@AllArgsConstructor
 public class AvgRatingService {
-    private final Firestore dbFirestore = FirestoreClient.getFirestore();
-    private final CollectionReference collection = dbFirestore.collection("avg_ratings");
+    private final AvgRatingRepositoryImpl repository;
 
     public List<AvgRatings> getAll() throws ExecutionException, InterruptedException {
-        ApiFuture<QuerySnapshot> future = collection.get();
-        List<QueryDocumentSnapshot> documents = future.get().getDocuments();
-
-        return documents.stream().map(x -> x.toObject(AvgRatings.class)).toList();
+        return repository.getAll();
     }
 
     private void create(String toUserId) throws ExecutionException, InterruptedException {
         // create record and adjust toUserId as uid
-        DocumentReference addedDocRef = collection.document(toUserId);
         AvgRatings entity = new AvgRatings(toUserId, 0.0, 0);
 
-        ApiFuture<WriteResult> writeResult = addedDocRef.set(entity);
-
         // wait for record to be created
-        writeResult.get();
-
-        addedDocRef.getId();
+        repository.save(entity);
     }
 
     private void save(AvgRatings entity) throws ExecutionException, InterruptedException {
