@@ -2,6 +2,7 @@ package com.timetable.ratingApp.controllers;
 
 import com.google.firebase.auth.FirebaseAuthException;
 import com.google.firebase.auth.UserInfo;
+import com.timetable.ratingApp.domain.annotation.IsAdmin;
 import com.timetable.ratingApp.domain.entities.UserDetails;
 import com.timetable.ratingApp.services.FirebaseAuthService;
 import lombok.AllArgsConstructor;
@@ -48,14 +49,16 @@ public class AppController {
         return new ResponseEntity<>(authService.getUser(documentId), HttpStatus.OK);
     }
 
+    @IsAdmin
     @GetMapping("/setAdminTrue")
-    public String setAdminTrue(@RequestParam String documentId, Principal principal) throws Exception {
-        return authService.setAdminRole(documentId, principal, true);
+    public String setAdminTrue(@RequestParam String documentId) throws Exception {
+        return authService.setAdminRole(documentId, true);
     }
 
+    @IsAdmin
     @GetMapping("/setAdminFalse")
-    public String setAdminFalse(@RequestParam String documentId, Principal principal) throws Exception {
-        return authService.setAdminRole(documentId, principal, false);
+    public String setAdminFalse(@RequestParam String documentId) throws Exception {
+        return authService.setAdminRole(documentId, false);
     }
 
     @GetMapping("/isAdmin")

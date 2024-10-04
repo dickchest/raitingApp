@@ -74,11 +74,11 @@ public class ReviewService {
         // check if document exists
         Reviews request = get(documentId);
 
-        // check if it's user's own review
-        if (!request.getFromUserId().equals(firebaseAuthService.getUserUid(principal)) &&
-                !firebaseAuthService.isAdmin()) {
-            throw new RuntimeException("Not allowed!");
-        }
+//        // check if it's user's own review
+//        if (!request.getFromUserId().equals(firebaseAuthService.getUserUid(principal)) &&
+//                !firebaseAuthService.isAdmin()) {
+//            throw new RuntimeException("Not allowed!");
+//        }
 
         // updating average rating
         avgRatingService.updateAvgRating(request.getToUserId(), 0, request.getRating());

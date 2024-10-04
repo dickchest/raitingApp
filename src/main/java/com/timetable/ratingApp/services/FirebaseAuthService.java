@@ -82,8 +82,8 @@ public class FirebaseAuthService {
     }
 
     // admin
-    public String setAdminRole(String uid, Principal principal, Boolean adminFlag) {
-        if (!isAdmin()) return "User without admin rights can't change user's roles";
+    public String setAdminRole(String uid, Boolean adminFlag) {
+
         // Set Custom Claims
         Map<String, Object> claims = new HashMap<>();
         claims.put("admin", adminFlag);

@@ -24,7 +24,7 @@ public class AvgRatingService {
     }
 
     private void create(String toUserId) throws ExecutionException, InterruptedException {
-        // create record and ajust toUserId as uid
+        // create record and adjust toUserId as uid
         DocumentReference addedDocRef = collection.document(toUserId);
         AvgRatings entity = new AvgRatings(toUserId, 0.0, 0);
 

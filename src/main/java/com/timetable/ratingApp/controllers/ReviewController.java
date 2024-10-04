@@ -1,5 +1,6 @@
 package com.timetable.ratingApp.controllers;
 
+import com.timetable.ratingApp.domain.annotation.IsAdmin;
 import com.timetable.ratingApp.domain.entities.Reviews;
 import com.timetable.ratingApp.services.ReviewService;
 import lombok.AllArgsConstructor;
@@ -17,6 +18,7 @@ import java.util.concurrent.ExecutionException;
 public class ReviewController {
     private ReviewService service;
 
+    @IsAdmin
     @GetMapping("/getAll")
     public ResponseEntity<List<Reviews>> getAll() throws InterruptedException, ExecutionException {
         return new ResponseEntity<>(service.getAll(), HttpStatus.OK);
@@ -37,6 +39,7 @@ public class ReviewController {
         return new ResponseEntity<>(service.update(entity, principal), HttpStatus.ACCEPTED);
     }
 
+    @IsAdmin
     @DeleteMapping("/delete")
     public ResponseEntity<String> delete(@RequestParam String documentId, Principal principal) throws ExecutionException, InterruptedException {
         return new ResponseEntity<>(service.delete(documentId, principal), HttpStatus.NO_CONTENT);
