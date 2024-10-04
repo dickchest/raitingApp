@@ -1,8 +1,5 @@
 package com.timetable.ratingApp.services;
 
-import com.google.api.core.ApiFuture;
-import com.google.cloud.firestore.*;
-import com.google.firebase.cloud.FirestoreClient;
 import com.timetable.ratingApp.domain.entities.AvgRatings;
 import com.timetable.ratingApp.repository.AvgRatingRepositoryImpl;
 import com.timetable.ratingApp.validation.NotFoundException;
@@ -10,7 +7,6 @@ import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 
 @Service
@@ -22,36 +18,24 @@ public class AvgRatingService {
         return repository.getAll();
     }
 
-    private void create(String toUserId) throws ExecutionException, InterruptedException {
+    private void create(String uid){
         // create record and adjust toUserId as uid
-        AvgRatings entity = new AvgRatings(toUserId, 0.0, 0);
+        AvgRatings entity = new AvgRatings(uid, 0.0, 0);
 
         // wait for record to be created
         repository.save(entity);
     }
 
-    private void save(AvgRatings entity) throws ExecutionException, InterruptedException {
-        // check if documents exits
-        AvgRatings request = get(entity.getToUserId());
-
-        // проверяем каждое поле
-        Optional.of(entity.getAvgRating()).ifPresent(request::setAvgRating);
-        Optional.of(entity.getTotalReviews()).ifPresent(request::setTotalReviews);
-
-        ApiFuture<WriteResult> collectionsApiFuture = collection.document(entity.getToUserId()).set(request);
-        collectionsApiFuture.get();
-    }
-
-    public void updateAvgRating(String toUserId, int newRating, int oldRating) throws ExecutionException, InterruptedException {
+    public void updateAvgRating(String uid, int newRating, int oldRating) throws ExecutionException, InterruptedException {
 
         // check if document exist
         AvgRatings entity;
         try {
-            entity = get(toUserId);
+            entity = get(uid);
         } catch (NotFoundException e) {
             // if entity doesn't exist, create one
-            create(toUserId);
-            entity = new AvgRatings(toUserId, 0.0, 0);
+            create(uid);
+            entity = new AvgRatings(uid, 0.0, 0);
         }
 
         // rating counter in average formula
@@ -71,33 +55,18 @@ public class AvgRatingService {
         entity.setTotalReviews(ratingCount);
 
         // safe updated record
-        save(entity);
+        repository.save(entity);
     }
 
-    public AvgRatings get(String documentId) {
-        DocumentSnapshot document = checkIfExistDocument(documentId);
-        return document.toObject(AvgRatings.class);
+    public AvgRatings get(String uid) {
+        return repository.findById(uid)
+                .orElseThrow(() -> new NotFoundException("Not found!"));
     }
 
-    public String delete(String documentId) {
-        // нужно проверить, есть ли документ
-        checkIfExistDocument(documentId);
-        collection.document(documentId).delete();
-        return "Successfully deleted " + documentId;
-    }
-
-    private DocumentSnapshot checkIfExistDocument(String documentId) {
-        DocumentReference documentReference = collection.document(documentId);
-        ApiFuture<DocumentSnapshot> future = documentReference.get();
-        try {
-            DocumentSnapshot document = future.get();
-            if (document.exists()) {
-                return document;
-            } else {
-                throw new NotFoundException("Entity in AvgRatings Not Found");
-            }
-        } catch (InterruptedException | ExecutionException e) {
-            throw new RuntimeException(e);
-        }
+    public String delete(String uid) {
+        // check if document exists
+        get(uid);
+        repository.delete(uid);
+        return "Successfully deleted " + uid;
     }
 }

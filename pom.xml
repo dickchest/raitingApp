@@ -66,6 +66,12 @@
 			<version>1.9.21</version>
 		</dependency>
 
+		<dependency>
+			<groupId>me.paulschwarz</groupId>
+			<artifactId>spring-dotenv</artifactId>
+			<version>3.0.0</version>
+		</dependency>
+
 		<!--		<dependency>-->
 <!--			<groupId>org.junit.jupiter</groupId>-->
 <!--			<artifactId>junit-jupiter-api</artifactId>-->
