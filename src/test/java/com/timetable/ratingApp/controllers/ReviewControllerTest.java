@@ -49,7 +49,7 @@ class ReviewControllerTest {
 
     @BeforeEach
     void setUp() {
-        testEntity = new Reviews("1", "fromUserId", "toUserId", 10, "testComment");
+        testEntity = new Reviews();
     }
 
     @Test
@@ -62,7 +62,7 @@ class ReviewControllerTest {
         mockMvc.perform(MockMvcRequestBuilders.get(basePath + "getAll")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].id").value(testEntity.getId()))
+                .andExpect(jsonPath("$[0].id").value(testEntity.getUid()))
                 .andExpect(jsonPath("$[0].fromUserId").value(testEntity.getFromUserId()))
                 .andExpect(jsonPath("$[0].toUserId").value(testEntity.getToUserId()))
                 .andExpect(jsonPath("$[0].rating").value(testEntity.getRating()))
@@ -98,7 +98,7 @@ class ReviewControllerTest {
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.id").value(testEntity.getId()))
+                .andExpect(jsonPath("$.id").value(testEntity.getUid()))
                 .andExpect(jsonPath("$.fromUserId").value(testEntity.getFromUserId()))
                 .andExpect(jsonPath("$.toUserId").value(testEntity.getToUserId()))
                 .andExpect(jsonPath("$.rating").value(testEntity.getRating()))

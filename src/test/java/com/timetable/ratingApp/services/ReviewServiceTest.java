@@ -119,7 +119,7 @@ public class ReviewServiceTest {
     public void testUpdateReview() throws ExecutionException, InterruptedException {
         // Arrange
         Reviews review = new Reviews();
-        review.setId("reviewId123");
+        review.setUid("reviewId123");
         review.setFromUserId("user123");
         when(firebaseAuthServiceMock.getUserUid(principalMock)).thenReturn("user123");
         when(documentReferenceMock.get()).thenReturn(documentSnapshotFutureMock);

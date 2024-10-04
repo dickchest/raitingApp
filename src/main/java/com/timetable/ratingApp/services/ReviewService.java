@@ -1,9 +1,9 @@
 package com.timetable.ratingApp.services;
 
-import com.google.api.core.ApiFuture;
-import com.google.cloud.firestore.*;
-import com.google.firebase.cloud.FirestoreClient;
 import com.timetable.ratingApp.domain.entities.Reviews;
+import com.timetable.ratingApp.repository.ReviewRepositoryImpl;
+import com.timetable.ratingApp.validation.NotFoundException;
+import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.security.Principal;
@@ -12,94 +12,64 @@ import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 
 @Service
+@AllArgsConstructor
 public class ReviewService {
     private final FirebaseAuthService firebaseAuthService;
     private final AvgRatingService avgRatingService;
-    private final Firestore dbFirestore = FirestoreClient.getFirestore();
-    private final CollectionReference collection = dbFirestore.collection("reviews");
-
-    public ReviewService(FirebaseAuthService firebaseAuthService, AvgRatingService avgRatingService) {
-        this.firebaseAuthService = firebaseAuthService;
-        this.avgRatingService = avgRatingService;
-    }
+    private final ReviewRepositoryImpl repository;
 
     public List<Reviews> getAll() throws ExecutionException, InterruptedException {
-        ApiFuture<QuerySnapshot> future = collection.get();
-        List<QueryDocumentSnapshot> documents = future.get().getDocuments();
-
-        return documents.stream().map(x -> x.toObject(Reviews.class)).toList();
+        return repository.getAll();
     }
 
     public String create(Reviews entity, Principal principal) throws ExecutionException, InterruptedException {
-        DocumentReference addedDocRef = collection.document();
 
-        entity.setId(addedDocRef.getId());
         entity.setFromUserId(firebaseAuthService.getUserUid(principal));
-        addedDocRef.set(entity);
 
         // updating average rating
         avgRatingService.updateAvgRating(entity.getToUserId(), entity.getRating(), 0);
 
-        return addedDocRef.getId();
+        return repository.save(entity);
     }
 
     public Reviews get(String documentId) {
-        DocumentSnapshot document = checkIfExistDocument(documentId);
-        return document.toObject(Reviews.class);
+        return repository.findById(documentId)
+                .orElseThrow(() -> new NotFoundException("Not found!"));
     }
 
     public String update(Reviews entity, Principal principal) throws ExecutionException, InterruptedException {
         // check if account exists
-        Reviews request = get(entity.getId());
-        System.out.println(entity.getToUserId());
+        Reviews request = get(entity.getUid());
 
         // check if it's user's own review
-        if (!request.getFromUserId().equals(firebaseAuthService.getUserUid(principal))) {
-            throw new RuntimeException("Not allowed!");
-        }
+        isCurrentUser(request, principal);
 
         // updating average rating
-        System.out.println("entity = " + entity.getToUserId() + ", new rating = " + entity.getRating() + ", old rating = " + request.getRating());
         avgRatingService.updateAvgRating(request.getToUserId(), entity.getRating(), request.getRating());
 
-        // проверяем каждое поле
+        // updates fields
         Optional.ofNullable(entity.getRating()).ifPresent(request::setRating);
         Optional.ofNullable(entity.getComment()).ifPresent(request::setComment);
 
-        ApiFuture<WriteResult> collectionsApiFuture = collection.document(entity.getId()).set(request);
-        return collectionsApiFuture.get().getUpdateTime().toString();
+        return repository.save(request);
     }
 
-    public String delete(String documentId, Principal principal) throws ExecutionException, InterruptedException {
+    public String delete(String uid, Principal principal) throws ExecutionException, InterruptedException {
         // check if document exists
-        Reviews request = get(documentId);
+        Reviews request = get(uid);
 
-//        // check if it's user's own review
-//        if (!request.getFromUserId().equals(firebaseAuthService.getUserUid(principal)) &&
-//                !firebaseAuthService.isAdmin()) {
-//            throw new RuntimeException("Not allowed!");
-//        }
+        // check if it's user's own review
+        isCurrentUser(request, principal);
 
         // updating average rating
         avgRatingService.updateAvgRating(request.getToUserId(), 0, request.getRating());
 
-        collection.document(documentId).delete();
-
-        return "Successfully deleted " + documentId;
+        return repository.delete(uid);
     }
 
-    private DocumentSnapshot checkIfExistDocument(String documentId) {
-        DocumentReference documentReference = collection.document(documentId);
-        ApiFuture<DocumentSnapshot> future = documentReference.get();
-        try {
-            DocumentSnapshot document = future.get();
-            if (document.exists()) {
-                return document;
-            } else {
-                throw new RuntimeException("Entity Not Found");
-            }
-        } catch (InterruptedException | ExecutionException e) {
-            throw new RuntimeException(e);
+    private void isCurrentUser(Reviews request, Principal principal) {
+        if (!request.getFromUserId().equals(firebaseAuthService.getUserUid(principal))) {
+            throw new RuntimeException("Not allowed!");
         }
     }
 }

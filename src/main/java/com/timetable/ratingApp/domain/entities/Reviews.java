@@ -2,17 +2,12 @@ package com.timetable.ratingApp.domain.entities;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseAuthException;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 @Getter
 @AllArgsConstructor
 @NoArgsConstructor
-public class Reviews {
-    @Setter
-    private String id; // Уникальный идентификатор отзыва.
+public class Reviews extends BaseEntity{
 
     @Setter
     private String fromUserId; // ID пользователя, который оставил отзыв.
@@ -39,16 +34,5 @@ public class Reviews {
             throw new IllegalArgumentException("Rating must be between 1 and 5.");
         }
         this.rating = rating;
-    }
-
-    @Override
-    public String toString() {
-        return "Reviews{" +
-                "id='" + id + '\'' +
-                ", fromUserId='" + fromUserId + '\'' +
-                ", toUserId='" + toUserId + '\'' +
-                ", rating=" + rating +
-                ", comment='" + comment + '\'' +
-                '}';
     }
 }
