@@ -5,7 +5,7 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public class AvgRatingRepositoryImpl extends AbstractRepositoryFirebase<AvgRatings> {
-    protected AvgRatingRepositoryImpl() {
+    public AvgRatingRepositoryImpl() {
         super("avg_ratings", AvgRatings.class);
     }
 }

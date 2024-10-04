@@ -7,13 +7,14 @@ import lombok.Setter;
 
 @Getter
 @Setter
-@AllArgsConstructor
 @NoArgsConstructor
 public class AvgRatings extends BaseEntity {
     private double avgRating = 0.0;
     private int totalReviews = 0; // Total amount of reviews
 
-    public AvgRatings(String uid, double v, int i) {
-        super();
+    public AvgRatings(String uid, double avgRating, int totalReviews) {
+        super.uid = uid;
+        this.avgRating = avgRating;
+        this.totalReviews = totalReviews;
     }
 }

@@ -34,7 +34,7 @@ public class ReviewService {
 
     public Reviews get(String documentId) {
         return repository.findById(documentId)
-                .orElseThrow(() -> new NotFoundException("Not found!"));
+                .orElseThrow(() -> new NotFoundException("Entity Not found!"));
     }
 
     public String update(Reviews entity, Principal principal) throws ExecutionException, InterruptedException {
@@ -54,12 +54,12 @@ public class ReviewService {
         return repository.save(request);
     }
 
-    public String delete(String uid, Principal principal) throws ExecutionException, InterruptedException {
+    public String delete(String uid, Principal principal){
         // check if document exists
         Reviews request = get(uid);
 
         // check if it's user's own review
-        isCurrentUser(request, principal);
+//        isCurrentUser(request, principal);
 
         // updating average rating
         avgRatingService.updateAvgRating(request.getToUserId(), 0, request.getRating());

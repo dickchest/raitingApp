@@ -18,7 +18,7 @@ public class AvgRatingService {
         return repository.getAll();
     }
 
-    private void create(String uid){
+    private void create(String uid) {
         // create record and adjust toUserId as uid
         AvgRatings entity = new AvgRatings(uid, 0.0, 0);
 
@@ -26,7 +26,7 @@ public class AvgRatingService {
         repository.save(entity);
     }
 
-    public void updateAvgRating(String uid, int newRating, int oldRating) throws ExecutionException, InterruptedException {
+    public void updateAvgRating(String uid, int newRating, int oldRating) {
 
         // check if document exist
         AvgRatings entity;
@@ -35,7 +35,7 @@ public class AvgRatingService {
         } catch (NotFoundException e) {
             // if entity doesn't exist, create one
             create(uid);
-            entity = new AvgRatings(uid, 0.0, 0);
+            entity = get(uid);
         }
 
         // rating counter in average formula
@@ -60,7 +60,7 @@ public class AvgRatingService {
 
     public AvgRatings get(String uid) {
         return repository.findById(uid)
-                .orElseThrow(() -> new NotFoundException("Not found!"));
+                .orElseThrow(() -> new NotFoundException("Entity Not found!"));
     }
 
     public String delete(String uid) {

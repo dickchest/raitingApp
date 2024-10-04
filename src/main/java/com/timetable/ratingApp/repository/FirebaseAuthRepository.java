@@ -1,28 +1,27 @@
-package com.timetable.ratingApp.services;
+package com.timetable.ratingApp.repository;
 
 import com.google.firebase.auth.*;
 import com.timetable.ratingApp.domain.entities.UserDetails;
-import com.timetable.ratingApp.repository.FirebaseAuthRepository;
 import com.timetable.ratingApp.validation.NotFoundException;
-import lombok.AllArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.stereotype.Repository;
 import org.springframework.stereotype.Service;
 
 import java.security.Principal;
 import java.util.*;
 
-@Service
-@AllArgsConstructor
-public class FirebaseAuthService {
-    private final FirebaseAuthRepository repository;
+@Repository
+public class FirebaseAuthRepository {
 
     public String getUserUid(Principal principal) {
-        Optional<UserDetails> userDetails = repository.findById(principal.getName());
-
-        return userDetails.map(UserDetails::getId)
-                .orElseThrow(()-> new RuntimeException("User not found"));
+        try {
+            FirebaseAuth.getInstance().getUser(principal.getName());
+        } catch (FirebaseAuthException e) {
+            throw new RuntimeException(e);
+        }
+        return principal.getName();
     }
 
     public String getUserEmail(Principal principal) {
@@ -35,7 +34,22 @@ public class FirebaseAuthService {
         return userRecord.getEmail();
     }
 
-    public List<String> getAll() {
+    public Optional<UserDetails> findById(String uid){
+        try {
+            UserRecord userRecord = FirebaseAuth.getInstance().getUser(uid);
+            UserDetails userDetails = new UserDetails(
+                    userRecord.getUid(),
+                    userRecord.getEmail(),
+                    null,
+                    userRecord.getDisplayName()
+            );
+            return Optional.of(userDetails);
+        } catch (FirebaseAuthException e) {
+            return Optional.empty();
+        }
+    }
+
+    public List<String> findAll() {
         List<ExportedUserRecord> allUsers = getAllUserRecords();
         return allUsers.stream().map(UserRecord::getUid).toList();
     }
@@ -73,14 +87,6 @@ public class FirebaseAuthService {
 
         UserRecord userRecord = FirebaseAuth.getInstance().updateUser(request);
         return userRecord.getUid();
-    }
-
-    public UserInfo[] getUser(String documentId) {
-        try {
-            return FirebaseAuth.getInstance().getUser(documentId).getProviderData();
-        } catch (FirebaseAuthException e) {
-            throw new RuntimeException("User not found");
-        }
     }
 
     // admin
