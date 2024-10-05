@@ -1,7 +1,6 @@
 package com.timetable.ratingApp.controllers;
 
 import com.google.firebase.auth.FirebaseAuthException;
-import com.google.firebase.auth.UserInfo;
 import com.timetable.ratingApp.domain.annotation.IsAdmin;
 import com.timetable.ratingApp.domain.entities.UserDetails;
 import com.timetable.ratingApp.services.FirebaseAuthService;
@@ -30,8 +29,8 @@ public class AppController {
     }
 
     @GetMapping("/getAllUid")
-    public ResponseEntity<List<UserDetails>> getAll() {
-        return new ResponseEntity<>(authService.getAll(), HttpStatus.OK);
+    public ResponseEntity<List<String>> getAll() {
+        return new ResponseEntity<>(authService.getAllUid(), HttpStatus.OK);
     }
 
     @PostMapping("/create")

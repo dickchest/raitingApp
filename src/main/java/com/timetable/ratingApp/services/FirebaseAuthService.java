@@ -30,8 +30,8 @@ public class FirebaseAuthService {
                 .orElseThrow(() -> new RuntimeException("User not found"));
     }
 
-    public List<UserDetails> getAll() {
-        return repository.findAll();
+    public List<String> getAllUid() {
+        return repository.findAll().stream().map(UserDetails::getId).toList();
     }
 
     public UserDetails findByUid(String uid) {

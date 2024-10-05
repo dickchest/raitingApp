@@ -1,7 +1,6 @@
 package com.timetable.ratingApp.controllers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.firebase.auth.UserInfo;
 import com.timetable.ratingApp.domain.entities.UserDetails;
 import com.timetable.ratingApp.services.FirebaseAuthService;
 import org.junit.jupiter.api.BeforeEach;
@@ -85,9 +84,8 @@ class AppControllerTest {
     @Test
     @WithMockUser
     void getAll() throws Exception {
-//        List<String> list = Collections.singletonList(testEntity.getId());
         List<String> list = Arrays.asList("1", "2", "3");
-        when(service.getAll()).thenReturn(null); // todo исправить тест - заглушка
+        when(service.getAllUid()).thenReturn(list);
 
         mockMvc.perform(MockMvcRequestBuilders.get(basePath + "/getAllUid"))
                 .andExpect(status().isOk())
@@ -134,47 +132,15 @@ class AppControllerTest {
     @WithMockUser
     void getUser() throws Exception {
 
-        UserInfo userInfo = new UserInfo() {
-            @Override
-            public String getUid() {
-                return testEntity.getId();
-            }
-
-            @Override
-            public String getDisplayName() {
-                return testEntity.getDisplayName();
-            }
-
-            @Override
-            public String getEmail() {
-                return testEntity.getEmail();
-            }
-
-            @Override
-            public String getPhoneNumber() {
-                return null;
-            }
-
-            @Override
-            public String getPhotoUrl() {
-                return null;
-            }
-
-            @Override
-            public String getProviderId() {
-                return null;
-            }
-        };
-
-        when(service.getUserUid("1")).thenReturn(new UserInfo[]{userInfo});
+        when(service.findByUid(testEntity.getId())).thenReturn(testEntity);
 
         mockMvc.perform(MockMvcRequestBuilders.get(basePath + "/getUser")
                         .param("documentId", "1")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$[0].displayName").value(testEntity.getDisplayName()))
-                .andExpect(jsonPath("$[0].email").value(testEntity.getEmail()))
-                .andExpect(jsonPath("$[0].uid").value(testEntity.getId()));
+                .andExpect(jsonPath("$.displayName").value(testEntity.getDisplayName()))
+                .andExpect(jsonPath("$.email").value(testEntity.getEmail()))
+                .andExpect(jsonPath("$.id").value(testEntity.getId()));
     }
 }

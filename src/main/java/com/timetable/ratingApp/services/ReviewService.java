@@ -25,11 +25,17 @@ public class ReviewService {
     public String create(Reviews entity, Principal principal) throws ExecutionException, InterruptedException {
 
         entity.setFromUserId(firebaseAuthService.getUserUid(principal));
+        checkToUserId(entity.getToUserId());
 
         // updating average rating
         avgRatingService.updateAvgRating(entity.getToUserId(), entity.getRating(), 0);
 
         return repository.save(entity);
+    }
+
+    private void checkToUserId(String toUserId) {
+        // may be set only for existing user
+        firebaseAuthService.findByUid(toUserId);
     }
 
     public Reviews get(String documentId) {
@@ -54,7 +60,7 @@ public class ReviewService {
         return repository.save(request);
     }
 
-    public String delete(String uid, Principal principal){
+    public String delete(String uid, Principal principal) {
         // check if document exists
         Reviews request = get(uid);
 
