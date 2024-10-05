@@ -1,17 +1,15 @@
 package com.timetable.ratingApp.services;
 
-import com.google.firebase.auth.*;
+import com.google.firebase.auth.FirebaseAuthException;
 import com.timetable.ratingApp.domain.entities.UserDetails;
 import com.timetable.ratingApp.repository.FirebaseAuthRepository;
 import com.timetable.ratingApp.validation.NotFoundException;
 import lombok.AllArgsConstructor;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
 
 import java.security.Principal;
-import java.util.*;
+import java.util.List;
+import java.util.Optional;
 
 @Service
 @AllArgsConstructor
@@ -22,107 +20,43 @@ public class FirebaseAuthService {
         Optional<UserDetails> userDetails = repository.findById(principal.getName());
 
         return userDetails.map(UserDetails::getId)
-                .orElseThrow(()-> new RuntimeException("User not found"));
+                .orElseThrow(() -> new RuntimeException("User not found"));
     }
 
     public String getUserEmail(Principal principal) {
-        UserRecord userRecord;
-        try {
-            userRecord = FirebaseAuth.getInstance().getUser(principal.getName());
-        } catch (FirebaseAuthException e) {
-            throw new RuntimeException(e);
-        }
-        return userRecord.getEmail();
+        Optional<UserDetails> userDetails = repository.findById(principal.getName());
+
+        return userDetails.map(UserDetails::getEmail)
+                .orElseThrow(() -> new RuntimeException("User not found"));
     }
 
-    public List<String> getAll() {
-        List<ExportedUserRecord> allUsers = getAllUserRecords();
-        return allUsers.stream().map(UserRecord::getUid).toList();
+    public List<UserDetails> getAll() {
+        return repository.findAll();
     }
 
-
-    private List<ExportedUserRecord> getAllUserRecords() {
-        List<ExportedUserRecord> users = new ArrayList<>();
-        ListUsersPage page;
-
-        try {
-            page = FirebaseAuth.getInstance().listUsers(null);
-            page.iterateAll().forEach(users::add);
-        } catch (FirebaseAuthException e) {
-            throw new RuntimeException(e);
-        }
-
-        return users;
+    public UserDetails findByUid(String uid) {
+        return repository.findById(uid)
+                .orElseThrow(() -> new NotFoundException("User not found!"));
     }
 
     public String create(UserDetails user) throws FirebaseAuthException {
-        UserRecord.CreateRequest request = new UserRecord.CreateRequest()
-                .setEmail(user.getEmail())
-                .setPassword(user.getPassword())
-                .setDisplayName(user.getDisplayName());
-
-        UserRecord userRecord = FirebaseAuth.getInstance().createUser(request);
-        return userRecord.getUid();
+        return repository.save(user);
     }
 
     public String update(UserDetails user) throws FirebaseAuthException {
-        UserRecord.UpdateRequest request = new UserRecord.UpdateRequest(user.getId());
-        Optional.ofNullable(user.getEmail()).ifPresent(request::setEmail);
-        Optional.ofNullable(user.getPassword()).ifPresent(request::setPassword);
-        Optional.ofNullable(user.getDisplayName()).ifPresent(request::setDisplayName);
-
-        UserRecord userRecord = FirebaseAuth.getInstance().updateUser(request);
-        return userRecord.getUid();
+        return repository.update(user);
     }
 
-    public UserInfo[] getUser(String documentId) {
-        try {
-            return FirebaseAuth.getInstance().getUser(documentId).getProviderData();
-        } catch (FirebaseAuthException e) {
-            throw new RuntimeException("User not found");
-        }
+    public void delete(String uid) {
+        repository.deleteById(uid);
     }
 
     // admin
     public String setAdminRole(String uid, Boolean adminFlag) {
-
-        // Set Custom Claims
-        Map<String, Object> claims = new HashMap<>();
-        claims.put("admin", adminFlag);
-
-        // Set Custom claims for user
-        try {
-            FirebaseAuth.getInstance().setCustomUserClaims(uid, claims);
-        } catch (FirebaseAuthException e) {
-            throw new NotFoundException("User with UID " + uid + " not found!");
-        }
-
-        return "Custom claims set for user with UID: " + uid;
+        return repository.setAdminRole(uid, adminFlag);
     }
 
     public boolean isAdmin() {
-        // get current auth from security context
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-
-        // check if Principal has object Jwt
-        if (authentication.getPrincipal() instanceof Jwt jwt) {
-
-            // Get token and check it with Firebase
-            String idToken = jwt.getTokenValue();
-            FirebaseToken decodedToken;
-            try {
-
-                decodedToken = FirebaseAuth.getInstance().verifyIdToken(idToken);
-                // check if admin word exist
-                Boolean isAdmin = (Boolean) decodedToken.getClaims().get("admin");
-
-                return isAdmin != null && isAdmin;
-
-            } catch (FirebaseAuthException e) {
-                throw new RuntimeException(e);
-            }
-
-        }
-        return false;
+        return repository.isAdmin();
     }
 }

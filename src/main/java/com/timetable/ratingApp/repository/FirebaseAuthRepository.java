@@ -7,7 +7,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Repository;
-import org.springframework.stereotype.Service;
 
 import java.security.Principal;
 import java.util.*;
@@ -34,7 +33,7 @@ public class FirebaseAuthRepository {
         return userRecord.getEmail();
     }
 
-    public Optional<UserDetails> findById(String uid){
+    public Optional<UserDetails> findById(String uid) {
         try {
             UserRecord userRecord = FirebaseAuth.getInstance().getUser(uid);
             UserDetails userDetails = new UserDetails(
@@ -49,9 +48,20 @@ public class FirebaseAuthRepository {
         }
     }
 
-    public List<String> findAll() {
+    public List<UserDetails> findAll() {
         List<ExportedUserRecord> allUsers = getAllUserRecords();
-        return allUsers.stream().map(UserRecord::getUid).toList();
+        List<UserDetails> users = new ArrayList<>();
+
+        for (ExportedUserRecord userRecord : allUsers) {
+            UserDetails userDetails = new UserDetails(
+                    userRecord.getUid(),
+                    userRecord.getEmail(),
+                    null,
+                    userRecord.getDisplayName()
+            );
+            users.add(userDetails);
+        }
+        return users;
     }
 
 
@@ -69,7 +79,8 @@ public class FirebaseAuthRepository {
         return users;
     }
 
-    public String create(UserDetails user) throws FirebaseAuthException {
+    // method for create userDetails entry
+    public String save(UserDetails user) throws FirebaseAuthException {
         UserRecord.CreateRequest request = new UserRecord.CreateRequest()
                 .setEmail(user.getEmail())
                 .setPassword(user.getPassword())
@@ -80,13 +91,22 @@ public class FirebaseAuthRepository {
     }
 
     public String update(UserDetails user) throws FirebaseAuthException {
-        UserRecord.UpdateRequest request = new UserRecord.UpdateRequest(user.getId());
-        Optional.ofNullable(user.getEmail()).ifPresent(request::setEmail);
+        UserRecord.UpdateRequest request = new UserRecord.UpdateRequest(user.getId())
+                .setEmail(user.getEmail())
+                .setDisplayName(user.getDisplayName());
+
         Optional.ofNullable(user.getPassword()).ifPresent(request::setPassword);
-        Optional.ofNullable(user.getDisplayName()).ifPresent(request::setDisplayName);
 
         UserRecord userRecord = FirebaseAuth.getInstance().updateUser(request);
         return userRecord.getUid();
+    }
+
+    public void deleteById(String uid) {
+        try {
+            FirebaseAuth.getInstance().deleteUser(uid);
+        } catch (FirebaseAuthException e) {
+            throw new NotFoundException("User with UID " + uid + " not found!");
+        }
     }
 
     // admin

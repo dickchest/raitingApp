@@ -30,7 +30,7 @@ public class AppController {
     }
 
     @GetMapping("/getAllUid")
-    public ResponseEntity<List<String>> getAll() {
+    public ResponseEntity<List<UserDetails>> getAll() {
         return new ResponseEntity<>(authService.getAll(), HttpStatus.OK);
     }
 
@@ -45,8 +45,8 @@ public class AppController {
     }
 
     @GetMapping("/getUser")
-    public ResponseEntity<UserInfo[]> getUser(@RequestParam String documentId) {
-        return new ResponseEntity<>(authService.getUser(documentId), HttpStatus.OK);
+    public ResponseEntity<UserDetails> getUser(@RequestParam String documentId) {
+        return new ResponseEntity<>(authService.findByUid(documentId), HttpStatus.OK);
     }
 
     @IsAdmin
