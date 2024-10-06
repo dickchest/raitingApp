@@ -71,6 +71,8 @@ public abstract class AbstractRepositoryFirebase<T extends BaseEntity> {
         ApiFuture<QuerySnapshot> future = collection.whereEqualTo(fieldName, value).get();
         try {
             List<QueryDocumentSnapshot> documents = future.get().getDocuments();
+            if (documents.isEmpty())
+                return Optional.empty();
             return Optional.of(documents.get(0).toObject(entityClass));
         } catch (InterruptedException | ExecutionException e) {
             throw new RuntimeException(e);

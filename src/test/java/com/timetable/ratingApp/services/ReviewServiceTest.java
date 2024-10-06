@@ -1,154 +1,155 @@
 package com.timetable.ratingApp.services;
 
-import com.google.api.core.ApiFuture;
-import com.google.cloud.firestore.*;
 import com.timetable.ratingApp.domain.entities.Reviews;
+import com.timetable.ratingApp.repository.ReviewRepositoryImpl;
+import com.timetable.ratingApp.validation.NotFoundException;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.security.Principal;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.*;
 
-public class ReviewServiceTest {
+@ExtendWith(MockitoExtension.class)
+class ReviewServiceTest {
+    @Mock
+    private FirebaseAuthService firebaseAuthService;
+    @Mock
+    private AvgRatingService avgRatingService;
+    @Mock
+    private ReviewRepositoryImpl repository;
 
     @InjectMocks
     private ReviewService reviewService;
 
-    @Mock
-    private FirebaseAuthService firebaseAuthServiceMock;
+    private Principal principal;
+    private Reviews review;
 
-    @Mock
-    private Firestore firestoreMock;
-
-    @Mock
-    private CollectionReference collectionMock;
-
-    @Mock
-    private DocumentReference documentReferenceMock;
-
-    @Mock
-    private ApiFuture<QuerySnapshot> querySnapshotFutureMock;
-
-    @Mock
-    private ApiFuture<DocumentSnapshot> documentSnapshotFutureMock;
-
-    @Mock
-    private ApiFuture<WriteResult> writeResultFutureMock;
-
-    @Mock
-    private QuerySnapshot querySnapshotMock;
-
-    @Mock
-    private QueryDocumentSnapshot queryDocumentSnapshotMock;
-
-    @Mock
-    private Principal principalMock;
-
-//    @BeforeEach
-//    public void setUp() {
-//        MockitoAnnotations.openMocks(this);
-//        when(firestoreMock.collection("reviews")).thenReturn(collectionMock);
-//        when(collectionMock.document(anyString())).thenReturn(documentReferenceMock);
-//
-//        reviewService = new ReviewService(firebaseAuthServiceMock, firestoreMock);
-//    }
-
-    @Test
-    public void testCreateReview() throws ExecutionException, InterruptedException {
-        // Arrange
-        Reviews review = new Reviews();
-        review.setComment("Test Comment");
-        when(firebaseAuthServiceMock.getUserUid(principalMock)).thenReturn("user123");
-        when(documentReferenceMock.getId()).thenReturn("reviewId123");
-        when(documentReferenceMock.set(any(Reviews.class))).thenReturn(writeResultFutureMock);
-
-        // Act
-        String resultId = reviewService.create(review, principalMock);
-
-        // Assert
-        assertEquals("reviewId123", resultId);
-        assertEquals("user123", review.getFromUserId());
-        verify(documentReferenceMock, times(1)).set(any(Reviews.class));
+    @BeforeEach
+    void setUp() {
+        principal = mock(Principal.class);
+        review = new Reviews();
+        review.setUid("reviewUid");
+        review.setFromUserId("user1");
+        review.setToUserId("user2");
+        review.setRating(5);
+        review.setComment("Great!");
     }
 
     @Test
-    public void testGetAllReviews() throws ExecutionException, InterruptedException {
+    void getAll() throws ExecutionException, InterruptedException {
         // Arrange
-        when(querySnapshotFutureMock.get()).thenReturn(querySnapshotMock);
-        when(querySnapshotMock.getDocuments()).thenReturn(List.of(queryDocumentSnapshotMock));
-        when(queryDocumentSnapshotMock.toObject(Reviews.class)).thenReturn(new Reviews());
-
-        when(collectionMock.get()).thenReturn(querySnapshotFutureMock);
+        List<Reviews> reviewsList = new ArrayList<>();
+        reviewsList.add(review);
+        when(repository.getAll()).thenReturn(reviewsList);
 
         // Act
-        List<Reviews> reviews = reviewService.getAll();
+        List<Reviews> result = reviewService.getAll();
 
         // Assert
-        assertNotNull(reviews);
-        assertEquals(1, reviews.size());
-        verify(collectionMock, times(1)).get();
+        assertEquals(1, result.size());
+        assertEquals(review, result.get(0));
+        verify(repository, times(1)).getAll();
     }
 
     @Test
-    public void testGetReviewById() throws ExecutionException, InterruptedException {
+    void create_ReviewSuccessfullyCreated() throws ExecutionException, InterruptedException {
         // Arrange
-        DocumentSnapshot documentSnapshotMock = mock(DocumentSnapshot.class);
-        Reviews mockReview = new Reviews();
-        when(documentSnapshotMock.exists()).thenReturn(true);
-        when(documentSnapshotMock.toObject(Reviews.class)).thenReturn(mockReview);
-        when(documentReferenceMock.get()).thenReturn(documentSnapshotFutureMock);
-        when(documentSnapshotFutureMock.get()).thenReturn(documentSnapshotMock);
+        when(firebaseAuthService.getUserUid(principal)).thenReturn("user1");
+        when(repository.save(any(Reviews.class))).thenReturn("reviewUid");
 
         // Act
-        Reviews result = reviewService.get("reviewId123");
+        String result = reviewService.create(review, principal);
 
         // Assert
-        assertNotNull(result);
-        verify(documentReferenceMock, times(1)).get();
+        assertEquals("reviewUid", result);
+        verify(avgRatingService, times(1)).updateAvgRating("user2", 5, 0);
+        verify(repository, times(1)).save(review);
+
     }
 
     @Test
-    public void testUpdateReview() throws ExecutionException, InterruptedException {
+    void get_ReviewExists_ReturnsReview() {
         // Arrange
-        Reviews review = new Reviews();
-        review.setUid("reviewId123");
-        review.setFromUserId("user123");
-        when(firebaseAuthServiceMock.getUserUid(principalMock)).thenReturn("user123");
-        when(documentReferenceMock.get()).thenReturn(documentSnapshotFutureMock);
-        when(documentSnapshotFutureMock.get().toObject(Reviews.class)).thenReturn(review);
-
-        when(collectionMock.document(anyString()).set(any(Reviews.class))).thenReturn(writeResultFutureMock);
+        when(repository.findById("reviewUid")).thenReturn(Optional.of(review));
 
         // Act
-        String result = reviewService.update(review, principalMock);
+        Reviews result = reviewService.get("reviewUid");
 
         // Assert
-        assertNotNull(result);
-        verify(collectionMock.document("reviewId123"), times(1)).set(review);
+        assertEquals(review, result);
+        verify(repository, times(1)).findById("reviewUid");
     }
 
     @Test
-    public void testDeleteReview() throws ExecutionException, InterruptedException {
+    void get_ReviewDoesNotExist_ThrowsNotFoundException() {
         // Arrange
-        DocumentSnapshot documentSnapshotMock = mock(DocumentSnapshot.class);
-        when(documentSnapshotMock.exists()).thenReturn(true);
-        when(documentReferenceMock.get()).thenReturn(documentSnapshotFutureMock);
-        when(documentSnapshotFutureMock.get()).thenReturn(documentSnapshotMock);
-        when(collectionMock.document(anyString()).delete()).thenReturn(writeResultFutureMock);
+        when(repository.findById("reviewUid")).thenReturn(Optional.empty());
+
+        // Act & Assert
+        assertThrows(NotFoundException.class, () -> reviewService.get("reviewUid"));
+    }
+
+    @Test
+    void update_ReviewSuccessfullyUpdated() throws ExecutionException, InterruptedException {
+        // Arrange
+        Reviews updatedReview = new Reviews();
+        updatedReview.setUid("reviewUid");
+        updatedReview.setRating(4);
+        updatedReview.setComment("Good");
+
+        when(repository.findById("reviewUid")).thenReturn(Optional.of(review));
+        when(firebaseAuthService.getUserUid(principal)).thenReturn("user1");
+        when(repository.save(any(Reviews.class))).thenReturn("reviewUid");
 
         // Act
-        String result = reviewService.delete("reviewId123", principalMock);
+        String result = reviewService.update(updatedReview, principal);
 
         // Assert
-        assertEquals("Successfully deleted reviewId123", result);
-        verify(collectionMock.document("reviewId123"), times(1)).delete();
+        assertEquals("reviewUid", result);
+        verify(avgRatingService, times(1)).updateAvgRating("user2", 4, 5);
+        verify(repository, times(1)).save(any(Reviews.class));
+    }
+
+    @Test
+    void delete_ReviewSuccessfullyDeleted() throws ExecutionException, InterruptedException {
+        // Arrange
+        when(repository.findById("reviewUid")).thenReturn(Optional.of(review));
+        when(repository.delete("reviewUid")).thenReturn("Successfully deleted " + "reviewUid");
+
+        // Act
+        String result = reviewService.delete("reviewUid", principal);
+
+        // Assert
+        assertEquals("Successfully deleted " + "reviewUid", result);
+        verify(avgRatingService, times(1)).updateAvgRating("user2", 0, 5);
+        verify(repository, times(1)).delete("reviewUid");
+    }
+
+    @Test
+    void isCurrentUser_ThrowsException_IfNotCurrentUser() throws NoSuchMethodException {
+        // Arrange
+        when(firebaseAuthService.getUserUid(principal)).thenReturn("otherUser");
+
+        // Use reflection to access the private method
+        Method isCurrentUserMethod = ReviewService.class.getDeclaredMethod("isCurrentUser", Reviews.class, Principal.class);
+        isCurrentUserMethod.setAccessible(true);
+
+        // Act & Assert
+        assertThrows(InvocationTargetException.class, () -> {
+            isCurrentUserMethod.invoke(reviewService, review, principal);
+        });
     }
 }
